@@ -1,4 +1,4 @@
-(jQuery)(function () {
+$(document).ready( function() {
 
 	var fingers = false;
 	var granularity = 100000;
@@ -6,7 +6,6 @@
 	var cursorState = { x: 0, y: 0 };
 	var cursorDelta = { x: 0, y: 0 };
 
-	var position = $('#position');
 
 	var overviewContainer = $('#container'),
 		overviewContainerWidth = overviewContainer.width(),
@@ -18,25 +17,27 @@
 		overviewHandleOffset = 0,
 		overviewHandle.moving = false;
 
-	var overviewRatio = 0;
+	
+	var range_begin = 1,
+		range_ends  = 1800;
+
+
+	var overviewRatio = Math.round( ((range_ends - range_begin) / (overviewContainerWidth - overviewHandleWidth)) * granularity) / granularity;
 	var overviewFrame = 0;
 	
-	
-	var startFrame = 1,
-		numFrames = 1800;
+	var debugOutput = $('#position');
 
 
-	$(overviewHandle).on('mousedown', grabOverviewHandle);
-	$(document).on('mousemove', function(e) {
-		if (overviewHandle.moving) { dragOverviewHandle(e); }
-	});
+	/* And in the Darkness; Bind them! */
+	$(overviewHandle).on('mousedown', grabHandle);
+	$(document).on('mousemove', dragHandle );
 	$(document).on('mouseup', function() {
-		releaseOverviewHandle();
+		releaseHandle();
 	});
 
 
 	/* Moving the Overview Handle */
-	function grabOverviewHandle(e) {
+	function grabHandle(e) {
 
 		e.preventDefault();
 
@@ -50,39 +51,39 @@
 		}
 	}
 
-	function dragOverviewHandle(e) {
+	function dragHandle(e) {
 
-		cursorDelta.x = (fingers) ? e.originalEvent.pageX - cursorState.x : e.pageX - cursorState.x;
-
-		// Where is Handle?
-		overviewHandleOffset = overviewHandle.offset();
-
-		// Bound to Left and Right Extents of Overview Selection
-		leftBounds  = (overviewContainerOffset.left);
-		rightBounds = (overviewContainerOffset.left + overviewContainerWidth - overviewHandleWidth);
-
-		// Constrain to Left & Right Bounds of Overview Container
-		proposedLeft = ((overviewHandleOffset.left + cursorDelta.x) <= leftBounds)  ? leftBounds  : overviewHandleOffset.left + cursorDelta.x;
-		proposedLeft = ((overviewHandleOffset.left + cursorDelta.x) >= rightBounds) ? rightBounds : proposedLeft;
-
-
-		// Position the Overview Handle on Screen
-		overviewHandle.offset({ left: proposedLeft });
-
-		// How Far from Left is the Handle?
-		overviewContainerLocation = (overviewHandleOffset.left - overviewContainerOffset.left);
-
-		// Each Pixel Represents X frames...
-		overviewRatio = Math.round( (numFrames / (overviewContainerWidth - overviewHandleWidth)) * granularity) / granularity;
-
-		overviewFrame = Math.round( overviewRatio * overviewContainerLocation );
-
-		position.html(overviewContainerLocation);
-
-		cursorState.x = (fingers) ? e.originalEvent.pageX : e.pageX;
+		if (overviewHandle.moving) {
+			cursorDelta.x = (fingers) ? e.originalEvent.pageX - cursorState.x : e.pageX - cursorState.x;
+	
+			// Where is Handle?
+			overviewHandleOffset = overviewHandle.offset();
+	
+			// Bound to Left and Right Extents of Overview Selection
+			leftBounds  = (overviewContainerOffset.left);
+			rightBounds = (overviewContainerOffset.left + overviewContainerWidth - overviewHandleWidth);
+	
+			// Constrain to Left & Right Bounds of Overview Container
+			proposedLeft = ((overviewHandleOffset.left + cursorDelta.x) <= leftBounds)  ? leftBounds  : overviewHandleOffset.left + cursorDelta.x;
+			proposedLeft = ((overviewHandleOffset.left + cursorDelta.x) >= rightBounds) ? rightBounds : proposedLeft;
+	
+	
+			// Position the Overview Handle on Screen
+			overviewHandle.offset({ left: proposedLeft });
+	
+			// How Far from Left is the Handle?
+			overviewContainerLocation = parseFloat(overviewHandleOffset.left - overviewContainerOffset.left);
+	
+			// Each Pixel Represents X frames...
+			overviewFrame = Math.round( overviewRatio * overviewContainerLocation ) + range_begin;
+	
+			debugOutput.html(overviewFrame);
+	
+			cursorState.x = (fingers) ? e.originalEvent.pageX : e.pageX;
+		}
 	}
-
-	function releaseOverviewHandle() {
+	
+	function releaseHandle() {
 		overviewHandle.moving = false;
 	}
 
